@@ -183,27 +183,6 @@ function configurarCadastroToners() {
     });
   }
 
-    const valor = document.getElementById('toner-valor').value;
-    const cor = document.getElementById('toner-cor').value;
-    const tipo = document.getElementById('toner-tipo').value;
-    fetch('api/toners.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modelo, capacidade, peso_cheio, peso_vazio, valor, cor, tipo })
-    })
-    .then(r => r.json())
-    .then(json => {
-      if (json.status === 'success') {
-        carregarToners();
-        formEl.reset();
-        Swal.fire('Sucesso', 'Toner cadastrado!', 'success');
-      } else {
-        Swal.fire('Erro', json.message || 'Erro ao cadastrar', 'error');
-      }
-    })
-    .catch(() => Swal.fire('Erro', 'Erro ao cadastrar', 'error'));
-  };
-
   // Variável para controlar edição
   let editandoId = null;
 
@@ -254,56 +233,6 @@ function configurarCadastroToners() {
             Swal.fire('Erro', 'Toner não encontrado', 'error');
           }
         });
-    }
-  };
-
-  // Submissão do formulário (ajuste para editar ou cadastrar)
-  formEl.onsubmit = function(e) {
-    e.preventDefault();
-    const modelo = document.getElementById('toner-modelo').value;
-    const capacidade = document.getElementById('toner-capacidade').value;
-    const peso_cheio = document.getElementById('toner-cheio').value;
-    const peso_vazio = document.getElementById('toner-vazio').value;
-    const valor = document.getElementById('toner-valor').value;
-    const cor = document.getElementById('toner-cor').value;
-    const tipo = document.getElementById('toner-tipo').value;
-    if (editandoId) {
-      // Editar
-      fetch('api/toners.php?id=' + editandoId, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelo, capacidade, peso_cheio, peso_vazio, valor, cor, tipo })
-      })
-      .then(r => r.json())
-      .then(json => {
-        if (json.status === 'success') {
-          carregarToners();
-          formEl.reset();
-          editandoId = null;
-          Swal.fire('Sucesso', 'Toner atualizado!', 'success');
-        } else {
-          Swal.fire('Erro', json.message || 'Erro ao atualizar', 'error');
-        }
-      })
-      .catch(() => Swal.fire('Erro', 'Erro ao atualizar', 'error'));
-    } else {
-      // Cadastrar novo
-      fetch('api/toners.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelo, capacidade, peso_cheio, peso_vazio, valor, cor, tipo })
-      })
-      .then(r => r.json())
-      .then(json => {
-        if (json.status === 'success') {
-          carregarToners();
-          formEl.reset();
-          Swal.fire('Sucesso', 'Toner cadastrado!', 'success');
-        } else {
-          Swal.fire('Erro', json.message || 'Erro ao cadastrar', 'error');
-        }
-      })
-      .catch(() => Swal.fire('Erro', 'Erro ao cadastrar', 'error'));
     }
   };
 
@@ -383,8 +312,10 @@ function configurarCadastroToners() {
       </div>
     </form>
   `;
+  
   // Corrigir escopo: formEl declarado fora, aqui só reatribui
-  formEl = document.getElementById('form-toners');
+  let formEl = document.getElementById('form-toners');
+  
   // Reatribuir evento de submit após recriar o formulário
   formEl.onsubmit = function(e) {
     e.preventDefault();
@@ -513,5 +444,3 @@ function configurarCadastroFornecedores() {
 // Garantir funções globais
 window.configurarCadastroToners = configurarCadastroToners;
 window.configurarCadastroFornecedores = configurarCadastroFornecedores;
-
-}
