@@ -1,0 +1,14 @@
+{
+  "name": "sgq-oti-frontend",
+  "version": "1.0.0",
+  "description": "SGQ OTI - Sistema de Gestão da Qualidade",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
