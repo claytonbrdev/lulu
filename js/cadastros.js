@@ -19,75 +19,6 @@ function configurarCadastroToners() {
   ];
   document.getElementById('cabecalho-toners').innerHTML = cabecalho.map(col => `<th>${col}</th>`).join('');
 
-  // Função para renderizar o formulário dentro do modal (apenas o conteúdo, não o <form> inteiro)
-  window.renderFormTonersModal = function() {
-    const formFields = `
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label>Modelo</label>
-            <input type="text" class="form-control" id="toner-modelo" required>
-          </div>
-          <div class="col-md-3 mb-3">
-            <label>Capacidade de Folhas</label>
-            <input type="number" class="form-control" id="toner-capacidade" required>
-          </div>
-          <div class="col-md-3 mb-3">
-            <label>Valor do Toner (R$)</label>
-            <input type="number" step="0.01" class="form-control" id="toner-valor" required>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-4 mb-3">
-            <label>Peso Cheio (g)</label>
-            <input type="number" class="form-control" id="toner-cheio" required>
-          </div>
-          <div class="col-md-4 mb-3">
-            <label>Peso Vazio (g)</label>
-            <input type="number" class="form-control" id="toner-vazio" required>
-          </div>
-          <div class="col-md-4 mb-3">
-            <label>Cor</label>
-            <select class="form-select" id="toner-cor" required>
-              <option value="">Selecione</option>
-              <option>Black</option>
-              <option>Cyan</option>
-              <option>Magenta</option>
-              <option>Yellow</option>
-            </select>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label>Tipo</label>
-            <select class="form-select" id="toner-tipo" required>
-              <option value="">Selecione</option>
-              <option>Compatível</option>
-              <option>Recondicionado</option>
-              <option>Original</option>
-            </select>
-          </div>
-          <div class="col-md-3 mb-3">
-            <label>Gramatura do Toner (g)</label>
-            <input type="number" class="form-control" id="toner-gramatura" readonly>
-          </div>
-          <div class="col-md-3 mb-3">
-            <label>Gramatura por folha (g)</label>
-            <input type="number" class="form-control" id="toner-gramatura-folha" readonly>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-4 mb-3">
-            <label>Custo Página do Toner (R$)</label>
-            <input type="number" class="form-control" id="toner-custo-pagina" readonly>
-          </div>
-          <div class="col-md-8 mb-3 d-flex align-items-end justify-content-end">
-            <button type="submit" class="btn btn-success px-5">Salvar</button>
-          </div>
-        </div>
-    `;
-    document.getElementById('form-toners').innerHTML = formFields;
-  }
-
   // Função para renderizar a tabela de toners
   function renderTabelaToners(toners) {
     document.getElementById('corpo-toners').innerHTML = toners.map(t => `
@@ -126,77 +57,195 @@ function configurarCadastroToners() {
   }
   carregarToners();
 
-  // Evento para abrir o modal e renderizar o formulário corretamente
-  const btnNovo = document.getElementById('btn-novo-cadastro');
-  if(btnNovo) {
-    btnNovo.addEventListener('click', () => {
-      // O modal já existe, apenas renderize o conteúdo do formulário
-      window.renderFormTonersModal();
-      let formEl = document.getElementById('form-toners');
-      if(formEl) {
-        // Cálculos automáticos
-        const capacidade = document.getElementById('toner-capacidade');
-        const cheio = document.getElementById('toner-cheio');
-        const vazio = document.getElementById('toner-vazio');
-        const valor = document.getElementById('toner-valor');
-        const gramatura = document.getElementById('toner-gramatura');
-        const gramaturaFolha = document.getElementById('toner-gramatura-folha');
-        const custoPagina = document.getElementById('toner-custo-pagina');
-        function atualizarCamposCalculados() {
-          const cap = parseFloat(capacidade.value) || 0;
-          const ch = parseFloat(cheio.value) || 0;
-          const vz = parseFloat(vazio.value) || 0;
-          const vl = parseFloat(valor.value) || 0;
-          const gr = ch - vz;
-          gramatura.value = gr > 0 ? gr : '';
-          gramaturaFolha.value = (gr > 0 && cap > 0) ? (gr / cap).toFixed(4) : '';
-          custoPagina.value = (vl > 0 && cap > 0) ? (vl / cap).toFixed(4) : '';
-        }
-        [capacidade, cheio, vazio, valor].forEach(el => el.addEventListener('input', atualizarCamposCalculados));
-        formEl.onsubmit = function(e) {
-          e.preventDefault();
-          const modelo = document.getElementById('toner-modelo').value;
-          const capacidadeVal = capacidade.value;
-          const peso_cheio = cheio.value;
-          const peso_vazio = vazio.value;
-          const valorVal = valor.value;
-          const cor = document.getElementById('toner-cor').value;
-          const tipo = document.getElementById('toner-tipo').value;
-          fetch('api/toners.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ modelo, capacidade: capacidadeVal, peso_cheio, peso_vazio, valor: valorVal, cor, tipo })
-          })
-          .then(r => r.json())
-          .then(json => {
-            if (json.status === 'success') {
-              carregarToners();
-              formEl.reset();
-              Swal.fire('Sucesso', 'Toner cadastrado!', 'success');
-            } else {
-              Swal.fire('Erro', json.message || 'Erro ao cadastrar', 'error');
-            }
-          })
-          .catch(() => Swal.fire('Erro', 'Erro ao cadastrar', 'error'));
-        };
-      }
-    });
-  }
-
   // Variável para controlar edição
   let editandoId = null;
 
+  // Configurar o formulário no modal
+  document.getElementById('form-toners').innerHTML = `
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Modelo</label>
+        <input type="text" class="form-control" id="toner-modelo" required>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Capacidade de Folhas</label>
+        <input type="number" class="form-control" id="toner-capacidade" required>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Valor do Toner (R$)</label>
+        <input type="number" step="0.01" class="form-control" id="toner-valor" required>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Peso Cheio (g)</label>
+        <input type="number" step="0.01" class="form-control" id="toner-cheio" required>
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Peso Vazio (g)</label>
+        <input type="number" step="0.01" class="form-control" id="toner-vazio" required>
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Cor</label>
+        <select class="form-select" id="toner-cor" required>
+          <option value="">Selecione</option>
+          <option value="Black">Black</option>
+          <option value="Cyan">Cyan</option>
+          <option value="Magenta">Magenta</option>
+          <option value="Yellow">Yellow</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Tipo</label>
+        <select class="form-select" id="toner-tipo" required>
+          <option value="">Selecione</option>
+          <option value="Compatível">Compatível</option>
+          <option value="Recondicionado">Recondicionado</option>
+          <option value="Original">Original</option>
+        </select>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Gramatura do Toner (g)</label>
+        <input type="number" step="0.01" class="form-control" id="toner-gramatura" readonly>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Gramatura por folha (g)</label>
+        <input type="number" step="0.01" class="form-control" id="toner-gramatura-folha" readonly>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Custo Página do Toner (R$)</label>
+        <input type="number" step="0.01" class="form-control" id="toner-custo-pagina" readonly>
+      </div>
+    </div>
+  `;
+
+  // Configurar cálculos automáticos
+  function configurarCalculosAutomaticos() {
+    const capacidade = document.getElementById('toner-capacidade');
+    const cheio = document.getElementById('toner-cheio');
+    const vazio = document.getElementById('toner-vazio');
+    const valor = document.getElementById('toner-valor');
+    const gramatura = document.getElementById('toner-gramatura');
+    const gramaturaFolha = document.getElementById('toner-gramatura-folha');
+    const custoPagina = document.getElementById('toner-custo-pagina');
+
+    function atualizarCamposCalculados() {
+      const cap = parseFloat(capacidade.value) || 0;
+      const ch = parseFloat(cheio.value) || 0;
+      const vz = parseFloat(vazio.value) || 0;
+      const vl = parseFloat(valor.value) || 0;
+      const gr = ch - vz;
+      
+      gramatura.value = gr > 0 ? gr.toFixed(2) : '';
+      gramaturaFolha.value = (gr > 0 && cap > 0) ? (gr / cap).toFixed(4) : '';
+      custoPagina.value = (vl > 0 && cap > 0) ? (vl / cap).toFixed(4) : '';
+    }
+
+    [capacidade, cheio, vazio, valor].forEach(el => {
+      el.addEventListener('input', atualizarCamposCalculados);
+    });
+  }
+
+  // Configurar cálculos automáticos
+  configurarCalculosAutomaticos();
+
+  // Configurar evento do botão salvar no modal
+  document.getElementById('btn-salvar-toners').addEventListener('click', function() {
+    const form = document.getElementById('form-toners');
+    
+    // Validar campos obrigatórios
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const modelo = document.getElementById('toner-modelo').value;
+    const capacidade = document.getElementById('toner-capacidade').value;
+    const peso_cheio = document.getElementById('toner-cheio').value;
+    const peso_vazio = document.getElementById('toner-vazio').value;
+    const valor = document.getElementById('toner-valor').value;
+    const cor = document.getElementById('toner-cor').value;
+    const tipo = document.getElementById('toner-tipo').value;
+
+    const dados = {
+      modelo,
+      capacidade: parseInt(capacidade),
+      peso_cheio: parseFloat(peso_cheio),
+      peso_vazio: parseFloat(peso_vazio),
+      valor: parseFloat(valor),
+      cor,
+      tipo
+    };
+
+    if (editandoId) {
+      // Editar toner existente
+      fetch('api/toners.php?id=' + editandoId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+      })
+      .then(r => r.json())
+      .then(json => {
+        if (json.status === 'success') {
+          carregarToners();
+          form.reset();
+          editandoId = null;
+          document.getElementById('modal-title-toners').textContent = 'Novo Toner';
+          bootstrap.Modal.getInstance(document.getElementById('modal-cadastro-toners')).hide();
+          Swal.fire('Sucesso', 'Toner atualizado com sucesso!', 'success');
+        } else {
+          Swal.fire('Erro', json.message || 'Erro ao atualizar toner', 'error');
+        }
+      })
+      .catch(() => Swal.fire('Erro', 'Erro ao atualizar toner', 'error'));
+    } else {
+      // Cadastrar novo toner
+      fetch('api/toners.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+      })
+      .then(r => r.json())
+      .then(json => {
+        if (json.status === 'success') {
+          carregarToners();
+          form.reset();
+          bootstrap.Modal.getInstance(document.getElementById('modal-cadastro-toners')).hide();
+          Swal.fire('Sucesso', 'Toner cadastrado com sucesso!', 'success');
+        } else {
+          Swal.fire('Erro', json.message || 'Erro ao cadastrar toner', 'error');
+        }
+      })
+      .catch(() => Swal.fire('Erro', 'Erro ao cadastrar toner', 'error'));
+    }
+  });
+
+  // Configurar evento do botão novo
+  document.getElementById('btn-novo-cadastro').addEventListener('click', function() {
+    editandoId = null;
+    document.getElementById('form-toners').reset();
+    document.getElementById('modal-title-toners').textContent = 'Novo Toner';
+    configurarCalculosAutomaticos(); // Reconfigurar após reset
+    const modal = new bootstrap.Modal(document.getElementById('modal-cadastro-toners'));
+    modal.show();
+  });
+
   // Delegação para editar/excluir
-  document.getElementById('corpo-toners').onclick = function(e) {
+  document.getElementById('corpo-toners').addEventListener('click', function(e) {
     if (e.target.closest('.btn-excluir-toner')) {
       const id = e.target.closest('.btn-excluir-toner').dataset.id;
       Swal.fire({
-        title: 'Excluir?',
+        title: 'Confirmar Exclusão',
         text: 'Deseja realmente excluir este toner?',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Sim, excluir',
-        cancelButtonText: 'Cancelar'
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc3545'
       }).then((result) => {
         if (result.isConfirmed) {
           fetch('api/toners.php?id=' + id, { method: 'DELETE' })
@@ -204,15 +253,16 @@ function configurarCadastroToners() {
             .then(json => {
               if (json.status === 'success') {
                 carregarToners();
-                Swal.fire('Excluído', 'Toner removido!', 'success');
+                Swal.fire('Excluído', 'Toner removido com sucesso!', 'success');
               } else {
-                Swal.fire('Erro', json.message || 'Erro ao excluir', 'error');
+                Swal.fire('Erro', json.message || 'Erro ao excluir toner', 'error');
               }
             })
-            .catch(() => Swal.fire('Erro', 'Erro ao excluir', 'error'));
+            .catch(() => Swal.fire('Erro', 'Erro ao excluir toner', 'error'));
         }
       });
     }
+    
     if (e.target.closest('.btn-editar-toner')) {
       const id = e.target.closest('.btn-editar-toner').dataset.id;
       fetch('api/toners.php?id=' + id)
@@ -227,14 +277,20 @@ function configurarCadastroToners() {
             document.getElementById('toner-valor').value = t.valor;
             document.getElementById('toner-cor').value = t.cor;
             document.getElementById('toner-tipo').value = t.tipo;
+            
             editandoId = id;
-            Swal.fire('Modo edição', 'Agora você pode editar o toner. Salve para atualizar.', 'info');
+            document.getElementById('modal-title-toners').textContent = 'Editar Toner';
+            configurarCalculosAutomaticos(); // Reconfigurar para o modo edição
+            
+            const modal = new bootstrap.Modal(document.getElementById('modal-cadastro-toners'));
+            modal.show();
           } else {
             Swal.fire('Erro', 'Toner não encontrado', 'error');
           }
-        });
+        })
+        .catch(() => Swal.fire('Erro', 'Erro ao carregar dados do toner', 'error'));
     }
-  };
+  });
 
   // Filtro de colunas
   const colunasFiltro = [
@@ -244,148 +300,6 @@ function configurarCadastroToners() {
     {nome: 'Tipo', valor: 'tipo'}
   ];
   document.getElementById('filtro-colunas').innerHTML = colunasFiltro.map(c => `<li><a class="dropdown-item" href="#" data-col="${c.valor}">${c.nome}</a></li>`).join('');
-
-  // Formulário/modal
-  document.getElementById('form-toners').outerHTML = `
-    <form id="form-toners" autocomplete="off">
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label>Modelo</label>
-          <input type="text" class="form-control" id="toner-modelo" required>
-        </div>
-        <div class="col-md-3 mb-3">
-          <label>Capacidade de Folhas</label>
-          <input type="number" class="form-control" id="toner-capacidade" required>
-        </div>
-        <div class="col-md-3 mb-3">
-          <label>Valor do Toner (R$)</label>
-          <input type="number" step="0.01" class="form-control" id="toner-valor" required>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-4 mb-3">
-          <label>Peso Cheio (g)</label>
-          <input type="number" class="form-control" id="toner-cheio" required>
-        </div>
-        <div class="col-md-4 mb-3">
-          <label>Peso Vazio (g)</label>
-          <input type="number" class="form-control" id="toner-vazio" required>
-        </div>
-        <div class="col-md-4 mb-3">
-          <label>Cor</label>
-          <select class="form-select" id="toner-cor" required>
-            <option value="">Selecione</option>
-            <option>Black</option>
-            <option>Cyan</option>
-            <option>Magenta</option>
-            <option>Yellow</option>
-          </select>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label>Tipo</label>
-          <select class="form-select" id="toner-tipo" required>
-            <option value="">Selecione</option>
-            <option>Compatível</option>
-            <option>Recondicionado</option>
-            <option>Original</option>
-          </select>
-        </div>
-        <div class="col-md-3 mb-3">
-          <label>Gramatura do Toner (g)</label>
-          <input type="number" class="form-control" id="toner-gramatura" readonly>
-        </div>
-        <div class="col-md-3 mb-3">
-          <label>Gramatura por folha (g)</label>
-          <input type="number" class="form-control" id="toner-gramatura-folha" readonly>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-4 mb-3">
-          <label>Custo Página do Toner (R$)</label>
-          <input type="number" class="form-control" id="toner-custo-pagina" readonly>
-        </div>
-        <div class="col-md-8 mb-3 d-flex align-items-end justify-content-end">
-          <button type="submit" class="btn btn-success px-5">Salvar</button>
-        </div>
-      </div>
-    </form>
-  `;
-  
-  // Corrigir escopo: formEl declarado fora, aqui só reatribui
-  let formEl = document.getElementById('form-toners');
-  
-  // Reatribuir evento de submit após recriar o formulário
-  formEl.onsubmit = function(e) {
-    e.preventDefault();
-    const modelo = document.getElementById('toner-modelo').value;
-    const capacidade = document.getElementById('toner-capacidade').value;
-    const peso_cheio = document.getElementById('toner-cheio').value;
-    const peso_vazio = document.getElementById('toner-vazio').value;
-    const valor = document.getElementById('toner-valor').value;
-    const cor = document.getElementById('toner-cor').value;
-    const tipo = document.getElementById('toner-tipo').value;
-    if (editandoId) {
-      // Editar
-      fetch('api/toners.php?id=' + editandoId, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelo, capacidade, peso_cheio, peso_vazio, valor, cor, tipo })
-      })
-      .then(r => r.json())
-      .then(json => {
-        if (json.status === 'success') {
-          carregarToners();
-          formEl.reset();
-          editandoId = null;
-          Swal.fire('Sucesso', 'Toner atualizado!', 'success');
-        } else {
-          Swal.fire('Erro', json.message || 'Erro ao atualizar', 'error');
-        }
-      })
-      .catch(() => Swal.fire('Erro', 'Erro ao atualizar', 'error'));
-    } else {
-      // Cadastrar novo
-      fetch('api/toners.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelo, capacidade, peso_cheio, peso_vazio, valor, cor, tipo })
-      })
-      .then(r => r.json())
-      .then(json => {
-        if (json.status === 'success') {
-          carregarToners();
-          formEl.reset();
-          Swal.fire('Sucesso', 'Toner cadastrado!', 'success');
-        } else {
-          Swal.fire('Erro', json.message || 'Erro ao cadastrar', 'error');
-        }
-      })
-      .catch(() => Swal.fire('Erro', 'Erro ao cadastrar', 'error'));
-    }
-  };
-
-  // Cálculos automáticos
-  const capacidade = document.getElementById('toner-capacidade');
-  const cheio = document.getElementById('toner-cheio');
-  const vazio = document.getElementById('toner-vazio');
-  const valor = document.getElementById('toner-valor');
-  const gramatura = document.getElementById('toner-gramatura');
-  const gramaturaFolha = document.getElementById('toner-gramatura-folha');
-  const custoPagina = document.getElementById('toner-custo-pagina');
-
-  function atualizarCamposCalculados() {
-    const cap = parseFloat(capacidade.value) || 0;
-    const ch = parseFloat(cheio.value) || 0;
-    const vz = parseFloat(vazio.value) || 0;
-    const vl = parseFloat(valor.value) || 0;
-    const gr = ch - vz;
-    gramatura.value = gr > 0 ? gr : '';
-    gramaturaFolha.value = (gr > 0 && cap > 0) ? (gr / cap).toFixed(4) : '';
-    custoPagina.value = (vl > 0 && cap > 0) ? (vl / cap).toFixed(4) : '';
-  }
-  [capacidade, cheio, vazio, valor].forEach(el => el.addEventListener('input', atualizarCamposCalculados));
 }
 
 // --- FORNECEDORES ---
